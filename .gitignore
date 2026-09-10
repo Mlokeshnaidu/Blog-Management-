@@ -1,0 +1,8 @@
+﻿__pycache__/
+*.pyc
+.env
+blog.db
+blog_demo.db
+blog_test.db
+venv/
+*.log
