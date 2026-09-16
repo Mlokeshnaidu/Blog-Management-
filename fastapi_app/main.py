@@ -1,7 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from fastapi_app.core.database import engine, Base
+from fastapi.staticfiles import StaticFiles
+
+from fastapi_app.core.database import init_db
+from fastapi_app.core.storage import init_storage
 import fastapi_app.models
 
 from fastapi_app.routes.auth import router as auth_router
@@ -9,15 +12,18 @@ from fastapi_app.routes.posts import router as posts_router
 from fastapi_app.routes.comments import router as comments_router
 from fastapi_app.routes.likes import router as likes_router
 
-Base.metadata.create_all(bind=engine)
+init_db()
+init_storage()
 
 app = FastAPI(
     title="Blog Management API",
-    description="Mini blogging system API built with FastAPI, SQLite, SQLAlchemy ORM, and JWT authentication.",
-    version="1.0.0",
+    description="Mini blogging system API built with FastAPI, SQLite, SQLAlchemy ORM, and JWT authentication with image uploads, pagination, and search.",
+    version="1.1.0",
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+app.mount("/media", StaticFiles(directory="media"), name="media")
 
 app.add_middleware(
     CORSMiddleware,

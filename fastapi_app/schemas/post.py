@@ -16,6 +16,7 @@ class PostOut(BaseModel):
     id: int
     title: str
     content: str
+    image: Optional[str] = None
     author_id: int
     created_at: datetime
     author: Optional[UserOut] = None
@@ -28,3 +29,11 @@ class PostOut(BaseModel):
 
 class PostDetailOut(PostOut):
     comments: List[CommentOut] = []
+
+class PaginatedPostResponse(BaseModel):
+    items: List[PostOut]
+    total: int
+    page: int
+    limit: int
+    total_pages: int
+

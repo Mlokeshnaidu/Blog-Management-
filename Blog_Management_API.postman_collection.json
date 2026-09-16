@@ -1,0 +1,410 @@
+{
+  "info": {
+    "_postman_id": "blog-management-api-v1-1",
+    "name": "Blog Management API (with Image Uploads & Pagination)",
+    "description": "Comprehensive Postman collection for the Blog Management API featuring JWT Authentication, Multipart Image Uploads, Static Media Serving, and Search/Pagination.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "sample_post_id",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"alice\",\n  \"email\": \"alice@example.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Register a new user account with unique username and email."
+          }
+        },
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.access_token) {",
+                  "    pm.collectionVariables.set('token', jsonData.access_token);",
+                  "    console.log('Saved auth token to collection variable');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"alice\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login using username or email to retrieve JWT bearer token."
+          }
+        },
+        {
+          "name": "Get Current User Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Retrieve the authenticated user's profile."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Posts (Image Upload, Pagination & Search)",
+      "item": [
+        {
+          "name": "List Posts (Paginated & Searchable)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/posts?page=1&limit=10&search=FastAPI",
+              "host": ["{{base_url}}"],
+              "path": ["posts"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (defaults to 1)"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Items per page (defaults to 10)"
+                },
+                {
+                  "key": "search",
+                  "value": "FastAPI",
+                  "description": "Search keyword for title or content"
+                }
+              ]
+            },
+            "description": "Fetch paginated post listings with search filtering. Returns items, total count, page, limit, and total_pages."
+          }
+        },
+        {
+          "name": "List My Posts (/posts/mine)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/posts/mine?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["posts", "mine"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Fetch all posts created by the currently authenticated user."
+          }
+        },
+        {
+          "name": "Get Single Post Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/posts/{{sample_post_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["posts", "{{sample_post_id}}"]
+            },
+            "description": "Retrieve full post details including author, image URL, like count, and comments list."
+          }
+        },
+        {
+          "name": "Create Post with Image (/posts/create)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.id) {",
+                  "    pm.collectionVariables.set('sample_post_id', jsonData.id.toString());",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Modern Web Architecture with FastAPI",
+                  "type": "text"
+                },
+                {
+                  "key": "content",
+                  "value": "Exploring asynchronous routing, SQLAlchemy ORM, and multipart uploads.",
+                  "type": "text"
+                },
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": "",
+                  "description": "Select cover image file (jpg, png, webp)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/posts/create",
+              "host": ["{{base_url}}"],
+              "path": ["posts", "create"]
+            },
+            "description": "Create a new post with multipart form-data image upload. Also available at `POST /posts`."
+          }
+        },
+        {
+          "name": "Update Post with Image (/posts/:id/update)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Modern Web Architecture with FastAPI (Updated Edition)",
+                  "type": "text"
+                },
+                {
+                  "key": "content",
+                  "value": "Updated content with optimized queries and clean code architecture.",
+                  "type": "text"
+                },
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": "",
+                  "description": "Upload a new replacement cover image"
+                },
+                {
+                  "key": "remove_image",
+                  "value": "false",
+                  "type": "text",
+                  "description": "Set to true if you wish to remove the existing cover image"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/posts/{{sample_post_id}}/update",
+              "host": ["{{base_url}}"],
+              "path": ["posts", "{{sample_post_id}}", "update"]
+            },
+            "description": "Update post title, content, or replace/remove the cover image. Only accessible by post author."
+          }
+        },
+        {
+          "name": "Delete Post",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/posts/{{sample_post_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["posts", "{{sample_post_id}}"]
+            },
+            "description": "Delete post and clean up associated image file. Only accessible by post author."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Comments",
+      "item": [
+        {
+          "name": "Get Post Comments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/posts/{{sample_post_id}}/comments",
+              "host": ["{{base_url}}"],
+              "path": ["posts", "{{sample_post_id}}", "comments"]
+            },
+            "description": "Retrieve all comments on a specific post."
+          }
+        },
+        {
+          "name": "Add Comment to Post",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Fantastic explanation! Learned a lot from this post.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/posts/{{sample_post_id}}/comments",
+              "host": ["{{base_url}}"],
+              "path": ["posts", "{{sample_post_id}}", "comments"]
+            },
+            "description": "Post a new comment. Triggers an asynchronous email notification to the post author."
+          }
+        },
+        {
+          "name": "Delete Comment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/posts/{{sample_post_id}}/comments/1",
+              "host": ["{{base_url}}"],
+              "path": ["posts", "{{sample_post_id}}", "comments", "1"]
+            },
+            "description": "Delete a comment. Allowed by the comment author or the post author."
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Likes",
+      "item": [
+        {
+          "name": "Toggle Like / Unlike Post",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/posts/{{sample_post_id}}/like",
+              "host": ["{{base_url}}"],
+              "path": ["posts", "{{sample_post_id}}", "like"]
+            },
+            "description": "Toggle like/unlike state for the post. Triggers email notification on like."
+          }
+        },
+        {
+          "name": "Explicit Unlike Post",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/posts/{{sample_post_id}}/like",
+              "host": ["{{base_url}}"],
+              "path": ["posts", "{{sample_post_id}}", "like"]
+            },
+            "description": "Explicitly remove like from a post."
+          }
+        }
+      ]
+    }
+  ]
+}
