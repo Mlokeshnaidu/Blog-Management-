@@ -8,6 +8,8 @@ from fastapi_app.schemas.user import UserRegister, UserLogin, UserOut, Token
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
+from fastapi_app.core.subscription_service import get_or_create_default_plan, subscribe_user_to_plan
+
 @router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED)
 def register(user_in: UserRegister, db: Session = Depends(get_db)):
     if db.query(User).filter(User.username == user_in.username).first():
@@ -19,6 +21,10 @@ def register(user_in: UserRegister, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    # Automatically enroll into Basic plan & generate welcome invoice
+    basic_plan = get_or_create_default_plan(db)
+    subscribe_user_to_plan(user, basic_plan, db)
 
     token = create_access_token({"sub": user.username})
     return {"access_token": token, "token_type": "bearer", "user": user}

@@ -6,6 +6,7 @@ from fastapi import UploadFile, HTTPException, status
 
 MEDIA_DIR = Path("media")
 POSTS_MEDIA_DIR = MEDIA_DIR / "posts"
+INVOICES_MEDIA_DIR = MEDIA_DIR / "invoices"
 
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"}
 ALLOWED_CONTENT_TYPES = {
@@ -20,6 +21,7 @@ ALLOWED_CONTENT_TYPES = {
 def init_storage():
     """Ensure media directories exist."""
     POSTS_MEDIA_DIR.mkdir(parents=True, exist_ok=True)
+    INVOICES_MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 
 def save_upload_image(upload_file: UploadFile) -> str:
     """

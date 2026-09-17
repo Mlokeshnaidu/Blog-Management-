@@ -28,6 +28,16 @@ class TestBlogAPI(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         Base.metadata.create_all(bind=engine)
+        from fastapi_app.models.subscription import SubscriptionPlan
+        db = TestingSession()
+        plans = [
+            SubscriptionPlan(name="Basic", price=0.0, duration_days=365, max_posts=1, max_images_per_post=1, max_likes=5, max_comments=5, description="Basic plan"),
+            SubscriptionPlan(name="Premium", price=9.99, duration_days=30, max_posts=2, max_images_per_post=2, max_likes=20, max_comments=20, description="Premium plan"),
+            SubscriptionPlan(name="Pro", price=29.99, duration_days=30, max_posts=-1, max_images_per_post=-1, max_likes=-1, max_comments=-1, description="Pro plan"),
+        ]
+        db.add_all(plans)
+        db.commit()
+        db.close()
         cls.client = TestClient(app)
 
     @classmethod
@@ -131,7 +141,20 @@ class TestBlogAPI(unittest.TestCase):
         r_static = self.client.get(image_url)
         self.assertEqual(r_static.status_code, 200)
 
-        # 4. Create Post without Image
+        # 4a. Basic plan limit check: Alice tries to create a 2nd post -> 403
+        r_blocked = self.client.post(
+            "/posts",
+            data={"title": "FastAPI Async Insights", "content": "Deep dive into async await in Python."},
+            headers=headers_a
+        )
+        self.assertEqual(r_blocked.status_code, 403)
+        self.assertIn("You’ve reached your plan limit. Kindly upgrade your plan to continue.", r_blocked.json()["detail"])
+
+        # 4b. Alice upgrades to Pro plan to get unlimited posts
+        r_upgrade = self.client.post("/subscriptions/subscribe", json={"plan_name": "Pro"}, headers=headers_a)
+        self.assertEqual(r_upgrade.status_code, 200)
+
+        # 4c. Create Post without Image now succeeds
         r2 = self.client.post(
             "/posts",
             data={"title": "FastAPI Async Insights", "content": "Deep dive into async await in Python."},

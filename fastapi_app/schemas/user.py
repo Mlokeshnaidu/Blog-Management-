@@ -1,4 +1,7 @@
+from datetime import datetime
+from typing import Optional
 from pydantic import BaseModel, EmailStr
+from fastapi_app.schemas.subscription import SubscriptionPlanOut
 
 class UserRegister(BaseModel):
     username: str
@@ -13,6 +16,10 @@ class UserOut(BaseModel):
     id: int
     username: str
     email: str
+    subscription_plan_id: Optional[int] = None
+    subscription_plan: Optional[SubscriptionPlanOut] = None
+    subscription_start_date: Optional[datetime] = None
+    subscription_end_date: Optional[datetime] = None
 
     class Config:
         from_attributes = True

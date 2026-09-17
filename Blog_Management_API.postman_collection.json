@@ -405,6 +405,104 @@
           }
         }
       ]
+    },
+    {
+      "name": "5. Subscriptions & Billing",
+      "item": [
+        {
+          "name": "Get Subscription Plans",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/subscriptions/plans",
+              "host": ["{{base_url}}"],
+              "path": ["subscriptions", "plans"]
+            },
+            "description": "Retrieve all available subscription plans (Basic, Premium, Pro) and their limits."
+          }
+        },
+        {
+          "name": "Get My Plan & Usage",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/subscriptions/my-plan",
+              "host": ["{{base_url}}"],
+              "path": ["subscriptions", "my-plan"]
+            },
+            "description": "Check active subscription plan, usage metrics (posts, likes, comments count) and remaining quotas."
+          }
+        },
+        {
+          "name": "Subscribe / Upgrade Plan",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan_name\": \"Premium\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/subscriptions/subscribe",
+              "host": ["{{base_url}}"],
+              "path": ["subscriptions", "subscribe"]
+            },
+            "description": "Subscribe or upgrade to Premium or Pro plan. Automatically generates a ReportLab PDF invoice and stores billing history."
+          }
+        },
+        {
+          "name": "Get Billing History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/billing/history",
+              "host": ["{{base_url}}"],
+              "path": ["billing", "history"]
+            },
+            "description": "Retrieve user billing history and generated PDF invoice links."
+          }
+        },
+        {
+          "name": "Download Invoice PDF",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/billing/invoices/1",
+              "host": ["{{base_url}}"],
+              "path": ["billing", "invoices", "1"]
+            },
+            "description": "Download system generated PDF invoice for a transaction."
+          }
+        }
+      ]
     }
   ]
 }

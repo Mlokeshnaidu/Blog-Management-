@@ -28,6 +28,10 @@ def toggle_like(
         db.commit()
         return {"liked": False, "likes_count": len(post.likes)}
 
+    # Enforce Subscription Plan Limit for Likes
+    from fastapi_app.core.subscription_service import check_can_like
+    check_can_like(current_user, db)
+
     new_like = Like(post_id=post_id, user_id=current_user.id)
     db.add(new_like)
     db.commit()

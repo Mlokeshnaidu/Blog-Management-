@@ -31,6 +31,10 @@ def add_comment(
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
 
+    # Enforce Subscription Plan Limit for Comments
+    from fastapi_app.core.subscription_service import check_can_comment
+    check_can_comment(current_user, db)
+
     comment = Comment(post_id=post_id, user_id=current_user.id, text=comment_in.text)
     db.add(comment)
     db.commit()
