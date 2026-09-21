@@ -43,11 +43,17 @@ class TestSubscriptionAccessControl(unittest.TestCase):
         db.commit()
         db.close()
 
+        cls._initial_invoices = set(Path("media/invoices").glob("*.pdf")) if Path("media/invoices").exists() else set()
         cls.client = TestClient(app)
 
     @classmethod
     def tearDownClass(cls):
-        pass
+        if Path("media/invoices").exists():
+            for p in set(Path("media/invoices").glob("*.pdf")) - cls._initial_invoices:
+                try:
+                    p.unlink(missing_ok=True)
+                except Exception:
+                    pass
 
     def test_01_get_plans(self):
         r = self.client.get("/subscriptions/plans")

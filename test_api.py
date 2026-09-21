@@ -37,11 +37,19 @@ class TestBlogAPI(unittest.TestCase):
         db.add_all(plans)
         db.commit()
         db.close()
+        from pathlib import Path
+        cls._initial_invoices = set(Path("media/invoices").glob("*.pdf")) if Path("media/invoices").exists() else set()
         cls.client = TestClient(app)
 
     @classmethod
     def tearDownClass(cls):
-        pass
+        from pathlib import Path
+        if Path("media/invoices").exists():
+            for p in set(Path("media/invoices").glob("*.pdf")) - cls._initial_invoices:
+                try:
+                    p.unlink(missing_ok=True)
+                except Exception:
+                    pass
 
     def test_00_root_and_docs(self):
         # Test Root endpoint

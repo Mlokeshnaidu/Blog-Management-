@@ -739,3 +739,199 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
 </html>
 """
     return HTMLResponse(content=html)
+
+@router.get("/admin/email/like-preview", response_class=HTMLResponse)
+def preview_like_email():
+    """Preview the responsive HTML email notification sent when a user likes a post."""
+    from fastapi_app.services.notification_service import notification_service
+    html_content = notification_service._render_html(
+        recipient_name="Jane Author",
+        post_title="FastAPI Best Practices: Async Notifications & Security",
+        actor_name="John Doe",
+        activity_type="Liked your post",
+        timestamp_str="2026-03-04 11:20 AM",
+        is_like=True
+    )
+    return HTMLResponse(content=html_content)
+
+@router.get("/admin/email/comment-preview", response_class=HTMLResponse)
+def preview_comment_email():
+    """Preview the responsive HTML email notification sent when a user comments on a post."""
+    from fastapi_app.services.notification_service import notification_service
+    html_content = notification_service._render_html(
+        recipient_name="Jane Author",
+        post_title="FastAPI Best Practices: Async Notifications & Security",
+        actor_name="John Doe",
+        activity_type="Commented on your post",
+        timestamp_str="2026-03-04 11:20 AM",
+        is_like=False,
+        extra_content="Brilliant breakdown! The asynchronous BackgroundTasks pattern is super clean and non-blocking."
+    )
+    return HTMLResponse(content=html_content)
+
+@router.get("/admin/email/inbox", response_class=HTMLResponse)
+def mock_mailtrap_inbox():
+    """Interactive Mailtrap-style Email Client Inbox UI displaying all simulated notifications."""
+    html_inbox = """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mailtrap Email Sandbox - Blog Notifications</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        body { background: #0f172a; color: #f8fafc; height: 100vh; display: flex; flex-direction: column; }
+        .header { background: #1e293b; padding: 16px 24px; border-bottom: 1px solid #334155; display: flex; align-items: center; justify-content: space-between; }
+        .logo-box { display: flex; align-items: center; gap: 12px; }
+        .logo-box i { font-size: 24px; color: #38bdf8; }
+        .logo-box h1 { font-size: 18px; font-weight: 700; color: #f8fafc; }
+        .badge-smtp { background: #22c55e22; color: #4ade80; border: 1px solid #22c55e44; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+        .container { display: flex; flex: 1; overflow: hidden; }
+        .sidebar { width: 340px; background: #182234; border-right: 1px solid #334155; overflow-y: auto; }
+        .mail-list-header { padding: 14px 18px; background: #1e293b; font-size: 13px; font-weight: 600; color: #94a3b8; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; }
+        .mail-item { padding: 16px 18px; border-bottom: 1px solid rgba(255,255,255,0.06); cursor: pointer; transition: all 0.2s; }
+        .mail-item:hover { background: rgba(56, 189, 248, 0.08); }
+        .mail-item.active { background: rgba(56, 189, 248, 0.15); border-left: 4px solid #38bdf8; }
+        .mail-sender { font-size: 13px; font-weight: 600; color: #f8fafc; margin-bottom: 4px; display: flex; justify-content: space-between; }
+        .mail-subject { font-size: 13px; color: #38bdf8; margin-bottom: 6px; font-weight: 500; }
+        .mail-preview { font-size: 12px; color: #94a3b8; line-height: 1.4; }
+        .main-viewer { flex: 1; display: flex; flex-direction: column; background: #0b0f19; overflow: hidden; }
+        .viewer-header { background: #1e293b; padding: 20px 28px; border-bottom: 1px solid #334155; }
+        .viewer-subject { font-size: 18px; font-weight: 700; color: #ffffff; margin-bottom: 10px; }
+        .viewer-meta { font-size: 13px; color: #94a3b8; display: flex; gap: 20px; }
+        .viewer-meta span { color: #cbd5e1; font-weight: 500; }
+        .viewer-tabs { display: flex; gap: 12px; margin-top: 14px; }
+        .tab-btn { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; padding: 6px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+        .tab-btn.active { background: #38bdf8; color: #0f172a; font-weight: 600; border-color: #38bdf8; }
+        .viewer-body { flex: 1; padding: 24px; overflow-y: auto; display: flex; justify-content: center; }
+        iframe { width: 100%; max-width: 680px; height: 100%; min-height: 520px; border: none; background: transparent; }
+        .text-view { display: none; width: 100%; max-width: 680px; background: #1e293b; padding: 24px; border-radius: 12px; font-family: monospace; white-space: pre-wrap; color: #e2e8f0; font-size: 14px; line-height: 1.6; border: 1px solid #334155; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo-box">
+            <i class="fas fa-envelope-open-text"></i>
+            <h1>Mailtrap SMTP Testing Sandbox <span style="font-weight:400; color:#94a3b8; font-size:14px;">| Blog Management Notifications</span></h1>
+        </div>
+        <div style="display:flex; gap:16px; align-items:center;">
+            <span class="badge-smtp"><i class="fas fa-circle" style="font-size:8px;"></i> SMTP: 2525 Connected</span>
+            <a href="/admin" style="color:#38bdf8; text-decoration:none; font-size:13px; font-weight:600;"><i class="fas fa-arrow-left"></i> Back to Admin Dashboard</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Sidebar List -->
+        <div class="sidebar">
+            <div class="mail-list-header">
+                <span>INBOX (2 Messages)</span>
+                <span>SANDBOX: blogapp-smtp</span>
+            </div>
+
+            <div class="mail-item active" id="item-comment" onclick="selectMail('comment')">
+                <div class="mail-sender">
+                    <span>Blog Management System</span>
+                    <span style="color:#64748b; font-size:11px;">11:20 AM</span>
+                </div>
+                <div class="mail-subject">💬 New Comment on: "FastAPI Best Practices"</div>
+                <div class="mail-preview">User @John Doe commented on your post: "Brilliant breakdown! The asynchronous..."</div>
+            </div>
+
+            <div class="mail-item" id="item-like" onclick="selectMail('like')">
+                <div class="mail-sender">
+                    <span>Blog Management System</span>
+                    <span style="color:#64748b; font-size:11px;">11:15 AM</span>
+                </div>
+                <div class="mail-subject">❤️ New Like on: "FastAPI Best Practices"</div>
+                <div class="mail-preview">User @John Doe liked your post: "FastAPI Best Practices: Async Notifications..."</div>
+            </div>
+        </div>
+
+        <!-- Main Viewer -->
+        <div class="main-viewer">
+            <div class="viewer-header">
+                <div class="viewer-subject" id="viewerSubject">New Comment on: "FastAPI Best Practices"</div>
+                <div class="viewer-meta">
+                    <div>From: <span>Blog Management System &lt;noreply@blogapp.com&gt;</span></div>
+                    <div>To: <span id="viewerTo">Jane Author &lt;jane@example.com&gt;</span></div>
+                    <div>Date: <span id="viewerDate">2026-03-04 11:20 AM</span></div>
+                </div>
+                <div class="viewer-tabs">
+                    <button class="tab-btn active" id="tabHtml" onclick="switchTab('html')"><i class="fas fa-code"></i> HTML View</button>
+                    <button class="tab-btn" id="tabText" onclick="switchTab('text')"><i class="fas fa-align-left"></i> Raw Text View</button>
+                </div>
+            </div>
+
+            <div class="viewer-body">
+                <iframe id="mailFrame" src="/admin/email/comment-preview"></iframe>
+                <div class="text-view" id="textView">Hi Jane Author,
+
+Someone interacted with your post on Blog Management!
+
+Post: "FastAPI Best Practices: Async Notifications & Security"
+User: John Doe
+Activity: Commented on your post
+Time: 2026-03-04 11:20 AM
+
+Comment Details: "Brilliant breakdown! The asynchronous BackgroundTasks pattern is super clean and non-blocking."
+
+Best regards,
+Blog Management System Team</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const mailData = {
+            comment: {
+                subject: 'New Comment on: "FastAPI Best Practices"',
+                url: '/admin/email/comment-preview',
+                to: 'Jane Author <jane@example.com>',
+                date: '2026-03-04 11:20 AM',
+                text: `Hi Jane Author,\\n\\nSomeone interacted with your post on Blog Management!\\n\\nPost: "FastAPI Best Practices: Async Notifications & Security"\\nUser: John Doe\\nActivity: Commented on your post\\nTime: 2026-03-04 11:20 AM\\n\\nComment Details: "Brilliant breakdown! The asynchronous BackgroundTasks pattern is super clean and non-blocking."\\n\\nBest regards,\\nBlog Management System Team`
+            },
+            like: {
+                subject: 'New Like on: "FastAPI Best Practices"',
+                url: '/admin/email/like-preview',
+                to: 'Jane Author <jane@example.com>',
+                date: '2026-03-04 11:15 AM',
+                text: `Hi Jane Author,\\n\\nSomeone interacted with your post on Blog Management!\\n\\nPost: "FastAPI Best Practices: Async Notifications & Security"\\nUser: John Doe\\nActivity: Liked your post\\nTime: 2026-03-04 11:15 AM\\n\\nBest regards,\\nBlog Management System Team`
+            }
+        };
+
+        function selectMail(type) {
+            document.querySelectorAll('.mail-item').forEach(el => el.classList.remove('active'));
+            document.getElementById('item-' + type).classList.add('active');
+            
+            const data = mailData[type];
+            document.getElementById('viewerSubject').innerText = data.subject;
+            document.getElementById('viewerTo').innerText = data.to;
+            document.getElementById('viewerDate').innerText = data.date;
+            document.getElementById('mailFrame').src = data.url;
+            document.getElementById('textView').innerText = data.text;
+        }
+
+        function switchTab(mode) {
+            const tabHtml = document.getElementById('tabHtml');
+            const tabText = document.getElementById('tabText');
+            const frame = document.getElementById('mailFrame');
+            const textView = document.getElementById('textView');
+
+            if (mode === 'html') {
+                tabHtml.classList.add('active');
+                tabText.classList.remove('active');
+                frame.style.display = 'block';
+                textView.style.display = 'none';
+            } else {
+                tabText.classList.add('active');
+                tabHtml.classList.remove('active');
+                frame.style.display = 'none';
+                textView.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>"""
+    return HTMLResponse(content=html_inbox)
+
