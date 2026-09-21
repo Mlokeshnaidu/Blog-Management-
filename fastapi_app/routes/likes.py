@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 
 from fastapi_app.core.database import get_db
 from fastapi_app.core.security import get_current_user
-from fastapi_app.core.notifications import send_email_notification
+from fastapi_app.core.subscription_service import check_can_like
+from fastapi_app.services.notification_service import notification_service
 from fastapi_app.models.user import User
 from fastapi_app.models.post import Post
 from fastapi_app.models.like import Like
@@ -29,7 +30,6 @@ def toggle_like(
         return {"liked": False, "likes_count": len(post.likes)}
 
     # Enforce Subscription Plan Limit for Likes
-    from fastapi_app.core.subscription_service import check_can_like
     check_can_like(current_user, db)
 
     new_like = Like(post_id=post_id, user_id=current_user.id)
@@ -37,13 +37,14 @@ def toggle_like(
     db.commit()
     db.refresh(post)
 
+    # Trigger asynchronous email notification if post has an author and it's not self-like
     if post.author and post.author_id != current_user.id:
-        background_tasks.add_task(
-            send_email_notification,
+        notification_service.send_like_notification(
+            post_title=post.title,
             recipient_email=post.author.email,
-            recipient_username=post.author.username,
-            subject=f"New like on: {post.title}",
-            message=f"@{current_user.username} liked your post."
+            recipient_name=post.author.username,
+            actor_name=current_user.username,
+            background_tasks=background_tasks,
         )
 
     return {"liked": True, "likes_count": len(post.likes)}

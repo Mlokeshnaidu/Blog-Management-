@@ -1,4 +1,4 @@
-﻿from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from fastapi_app.core.config import settings
 from fastapi_app.core.database import get_db
+from fastapi_app.models.user import User
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
@@ -35,7 +36,6 @@ def get_current_user(token: Optional[str] = Depends(oauth2_scheme), db: Session 
     except JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
-    from fastapi_app.models.user import User
     user = db.query(User).filter(User.username == username).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
@@ -49,7 +49,6 @@ def get_optional_current_user(token: Optional[str] = Depends(oauth2_scheme), db:
         username: str = payload.get("sub")
         if not username:
             return None
-        from fastapi_app.models.user import User
         return db.query(User).filter(User.username == username).first()
     except JWTError:
         return None

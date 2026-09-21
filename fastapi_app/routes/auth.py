@@ -1,14 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+
 from fastapi_app.core.database import get_db
 from fastapi_app.core.security import verify_password, get_password_hash, create_access_token, get_current_user
+from fastapi_app.core.subscription_service import get_or_create_default_plan, subscribe_user_to_plan
 from fastapi_app.models.user import User
 from fastapi_app.schemas.user import UserRegister, UserLogin, UserOut, Token
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
-
-from fastapi_app.core.subscription_service import get_or_create_default_plan, subscribe_user_to_plan
 
 @router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED)
 def register(user_in: UserRegister, db: Session = Depends(get_db)):
@@ -37,15 +37,20 @@ def register(user_in: UserRegister, db: Session = Depends(get_db)):
             "content": {
                 "application/json": {
                     "schema": {
-                        "$ref": "#/components/schemas/UserLogin"
+                        "type": "object",
+                        "properties": {
+                            "username": {"type": "string", "description": "Username or Email address"},
+                            "password": {"type": "string", "format": "password", "description": "User password"}
+                        },
+                        "required": ["username", "password"]
                     }
                 },
                 "application/x-www-form-urlencoded": {
                     "schema": {
                         "type": "object",
                         "properties": {
-                            "username": {"type": "string"},
-                            "password": {"type": "string", "format": "password"}
+                            "username": {"type": "string", "description": "Username or Email address"},
+                            "password": {"type": "string", "format": "password", "description": "User password"}
                         },
                         "required": ["username", "password"]
                     }

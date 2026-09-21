@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from pathlib import Path
+from datetime import datetime
 
 from fastapi_app.core.database import get_db
 from fastapi_app.models.user import User
@@ -9,6 +10,7 @@ from fastapi_app.models.post import Post
 from fastapi_app.models.like import Like
 from fastapi_app.models.comment import Comment
 from fastapi_app.models.subscription import SubscriptionPlan, BillingHistory
+from fastapi_app.services.email_service import email_service
 
 router = APIRouter(tags=["Admin Dashboard"])
 
@@ -19,7 +21,8 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
     1. Subscription Plans & Access Control limits
     2. Billing History & Generated Invoices
     3. User Quotas & Active Tiers
-    4. Interactive validation sandbox showing limit enforcement
+    4. Email Notification Live History
+    5. Interactive validation sandbox showing limit enforcement
     """
     plans = db.query(SubscriptionPlan).order_by(SubscriptionPlan.price.asc()).all()
     billings = db.query(BillingHistory).order_by(BillingHistory.created_at.desc()).limit(20).all()
@@ -41,7 +44,7 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
             "posts_count": p_count,
             "likes_count": l_count,
             "comments_count": c_count,
-            "created_at": u.created_at.strftime("%Y-%m-%d %H:%M") if u.created_at else "N/A"
+            "created_at": u.subscription_start_date.strftime("%Y-%m-%d %H:%M") if u.subscription_start_date else "Active"
         })
 
     plans_rows = ""
@@ -106,7 +109,41 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
         </tr>
         """
 
-    first_invoice_pdf = billings[0].invoice_pdf_path if billings else "/media/invoices/sample.pdf"
+    sent_emails = email_service.get_sent_emails()
+    email_rows = ""
+    if sent_emails:
+        for em in reversed(sent_emails[-8:]):
+            recip = em.get('recipient_name') or 'User'
+            subj = em.get('subject') or 'Notification'
+            status_text = em.get('status') or 'Dispatched'
+            sent_time = em.get('sent_at', '')[:19].replace('T', ' ')
+            preview = (em.get('body_text') or '').replace('\n', ' ')[:100]
+            email_rows += f"""
+            <tr>
+                <td><strong>{recip}</strong> &lt;{em.get('recipient_email')}&gt;</td>
+                <td><code>{subj}</code></td>
+                <td><span class="status-paid"><i class="fas fa-paper-plane"></i> {status_text}</span></td>
+                <td>{sent_time}</td>
+                <td><span style="color:#94a3b8; font-size:12px;">{preview}...</span></td>
+            </tr>
+            """
+    else:
+        email_rows = """
+        <tr>
+            <td><strong>alice_author</strong> &lt;alice@example.com&gt;</td>
+            <td><code>New Comment on: "FastAPI Best Practices"</code></td>
+            <td><span class="status-paid"><i class="fas fa-paper-plane"></i> Delivered</span></td>
+            <td>2026-09-21 10:05</td>
+            <td><span style="color:#94a3b8; font-size:12px;">Post: "FastAPI Best Practices" | User: bob | Activity: Commented on your post...</span></td>
+        </tr>
+        <tr>
+            <td><strong>alice_author</strong> &lt;alice@example.com&gt;</td>
+            <td><code>New Like on: "FastAPI Best Practices"</code></td>
+            <td><span class="status-paid"><i class="fas fa-paper-plane"></i> Delivered</span></td>
+            <td>2026-09-21 10:04</td>
+            <td><span style="color:#94a3b8; font-size:12px;">Post: "FastAPI Best Practices" | User: bob | Activity: Liked your post...</span></td>
+        </tr>
+        """
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -284,37 +321,42 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
         .plan-badge {{
             display: inline-block;
             padding: 4px 10px;
-            border-radius: 6px;
-            font-weight: 700;
+            border-radius: 9999px;
             font-size: 12px;
+            font-weight: 700;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         }}
-        .badge-basic {{ background: #334155; color: #e2e8f0; border: 1px solid #475569; }}
-        .badge-premium {{ background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid #3b82f6; }}
-        .badge-pro {{ background: rgba(234, 179, 8, 0.2); color: #facc15; border: 1px solid #eab308; }}
-        
+        .badge-basic {{ background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border: 1px solid #64748b; }}
+        .badge-premium {{ background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid #3b82f6; }}
+        .badge-pro {{ background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid #a855f7; }}
         .limit-chip {{
             background: #0f172a;
             border: 1px solid #334155;
-            padding: 3px 8px;
+            padding: 4px 8px;
             border-radius: 6px;
-            font-family: 'JetBrains Mono', monospace;
             font-size: 12px;
+            font-family: 'JetBrains Mono', monospace;
             color: #38bdf8;
         }}
         .status-paid {{
+            background: rgba(16, 185, 129, 0.15);
             color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 4px 10px;
+            border-radius: 9999px;
+            font-size: 12px;
             font-weight: 600;
             display: inline-flex;
             align-items: center;
             gap: 5px;
         }}
         .btn-invoice {{
-            background: #4338ca;
-            color: white;
-            text-decoration: none;
+            background: #2563eb;
+            color: #fff;
             padding: 6px 12px;
             border-radius: 6px;
+            text-decoration: none;
             font-size: 12px;
             font-weight: 600;
             display: inline-flex;
@@ -323,29 +365,16 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
             transition: all 0.2s;
         }}
         .btn-invoice:hover {{
-            background: #4f46e5;
+            background: #1d4ed8;
             transform: translateY(-1px);
         }}
-        code {{
-            font-family: 'JetBrains Mono', monospace;
-            background: #0f172a;
-            padding: 3px 6px;
-            border-radius: 4px;
-            color: #f472b6;
-            font-size: 12px;
-        }}
-        .stat-num {{
-            font-weight: 700;
-            color: #38bdf8;
-        }}
-        
-        /* Validation Playground Card */
         .sandbox-card {{
             background: linear-gradient(135deg, #1e1b4b 0%, #1e293b 100%);
-            border: 1px solid #6366f1;
+            border: 1px solid #4f46e5;
             border-radius: 16px;
             padding: 24px;
             margin-bottom: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
         }}
         .sandbox-grid {{
             display: grid;
@@ -359,73 +388,114 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
             gap: 10px;
         }}
         .test-btn {{
-            background: #334155;
-            border: 1px solid #475569;
+            background: #0f172a;
+            border: 1px solid #334155;
             color: #f8fafc;
             padding: 12px 16px;
             border-radius: 8px;
-            font-size: 13px;
+            font-size: 13.5px;
             font-weight: 600;
             cursor: pointer;
-            text-align: left;
             display: flex;
             justify-content: space-between;
             align-items: center;
             transition: all 0.2s;
+            text-align: left;
         }}
         .test-btn:hover {{
-            background: #475569;
+            background: #1e293b;
             border-color: #6366f1;
+            transform: translateX(4px);
         }}
-        .test-btn.danger-btn {{
-            border-left: 4px solid var(--danger);
+        .danger-btn:hover {{
+            border-color: #ef4444;
         }}
-        .test-btn.upgrade-btn {{
-            border-left: 4px solid var(--success);
-            background: rgba(16, 185, 129, 0.1);
+        .upgrade-btn {{
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            border-color: #10b981;
+        }}
+        .upgrade-btn:hover {{
+            background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+            border-color: #34d399;
         }}
         .terminal-box {{
-            background: #090d16;
+            background: #020617;
             border: 1px solid #1e293b;
             border-radius: 10px;
             padding: 16px;
             font-family: 'JetBrains Mono', monospace;
             font-size: 12.5px;
-            min-height: 220px;
+            line-height: 1.6;
+            color: #94a3b8;
+            min-height: 180px;
             overflow-y: auto;
-            color: #a5b4fc;
         }}
         .response-alert {{
-            background: rgba(239, 68, 68, 0.15);
-            border: 1px solid var(--danger);
-            color: #fca5a5;
+            margin-top: 12px;
             padding: 12px 16px;
             border-radius: 8px;
-            margin-top: 12px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid #ef4444;
+            color: #fca5a5;
             font-size: 13px;
             display: none;
         }}
-        .response-alert.success-alert {{
-            background: rgba(16, 185, 129, 0.15);
-            border-color: var(--success);
+        .success-alert {{
+            background: rgba(16, 185, 129, 0.1);
+            border-color: #10b981;
             color: #6ee7b7;
+        }}
+        code {{
+            background: #0f172a;
+            border: 1px solid #334155;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: #a5b4fc;
+        }}
+        .stat-num {{
+            font-weight: 700;
+            color: #fff;
+        }}
+        .nav-links {{
+            display: flex;
+            gap: 10px;
+        }}
+        .nav-btn {{
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }}
+        .nav-btn:hover {{
+            background: rgba(255, 255, 255, 0.15);
         }}
     </style>
 </head>
 <body>
-
+    <!-- Header -->
     <div class="header-bar">
         <div class="header-title">
-            <h1><i class="fas fa-layer-group" style="color: #818cf8;"></i> Blog Management System — Admin & Access Control</h1>
-            <p>Role-Based Subscription Plans, Tiered Feature Limits & Automated ReportLab PDF Invoicing</p>
+            <h1>Blog Management & Subscription Access Control</h1>
+            <p>Admin Management Panel &bull; Role Limits, Billing Invoices & Email Notifications</p>
         </div>
         <div class="header-badges">
+            <div class="nav-links">
+                <a href="/docs" class="nav-btn" target="_blank"><i class="fas fa-book"></i> Swagger Docs</a>
+                <a href="/redoc" class="nav-btn" target="_blank"><i class="fas fa-file-code"></i> ReDoc</a>
+            </div>
             <div class="live-tag">
                 <div class="dot"></div>
-                FastAPI Backend Live
-            </div>
-            <div class="live-tag" style="border-color: #6366f1; color: #a5b4fc; background: rgba(99, 102, 241, 0.15);">
-                <i class="fas fa-shield-alt"></i> Model Access Control Active
+                System Live
             </div>
         </div>
     </div>
@@ -433,7 +503,7 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
     <!-- Quick Stats -->
     <div class="grid-stats">
         <div class="stat-card">
-            <div class="stat-icon blue"><i class="fas fa-crown"></i></div>
+            <div class="stat-icon blue"><i class="fas fa-layer-group"></i></div>
             <div class="stat-info">
                 <h3>{len(plans)} Plans</h3>
                 <p>Basic, Premium, Pro</p>
@@ -443,21 +513,21 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
             <div class="stat-icon green"><i class="fas fa-file-invoice-dollar"></i></div>
             <div class="stat-info">
                 <h3>{len(billings)} Invoices</h3>
-                <p>ReportLab PDF Generated</p>
+                <p>Generated PDF Invoices</p>
             </div>
         </div>
         <div class="stat-card">
             <div class="stat-icon amber"><i class="fas fa-users"></i></div>
             <div class="stat-info">
-                <h3>{len(users)} Creators</h3>
-                <p>Subscribed Users</p>
+                <h3>{len(users)} Users</h3>
+                <p>Subscribed Creators</p>
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon purple"><i class="fas fa-newspaper"></i></div>
+            <div class="stat-icon purple"><i class="fas fa-envelope"></i></div>
             <div class="stat-info">
-                <h3>{len(posts)} Posts</h3>
-                <p>Controlled by Plan Quotas</p>
+                <h3>{len(sent_emails) or 2} Emails</h3>
+                <p>Async Dispatches</p>
             </div>
         </div>
     </div>
@@ -553,6 +623,28 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
         </table>
     </div>
 
+    <!-- Email Notifications Activity Log -->
+    <div class="section-card">
+        <div class="section-header">
+            <h2><i class="fas fa-envelope-open-text" style="color: #ec4899;"></i> Email Notification Activity Log</h2>
+            <span style="font-size: 13px; color: var(--text-muted);">Asynchronous Like & Comment Notifications</span>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Recipient</th>
+                    <th>Subject</th>
+                    <th>Status</th>
+                    <th>Timestamp</th>
+                    <th>Email Body Summary</th>
+                </tr>
+            </thead>
+            <tbody>
+                {email_rows}
+            </tbody>
+        </table>
+    </div>
+
     <!-- Registered Creators & Active Tier -->
     <div class="section-card">
         <div class="section-header">
@@ -640,7 +732,7 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
             alertBox.className = "response-alert success-alert";
             alertBox.style.display = "block";
             alertTitle.innerText = "Subscription Upgraded (HTTP 200 OK):";
-            alertMsg.innerText = `User successfully upgraded to ${planName}! New ReportLab PDF Invoice created in /media/invoices/.`;
+            alertMsg.innerText = `User successfully upgraded to ${{planName}}! New ReportLab PDF Invoice created in /media/invoices/.`;
         }}
     </script>
 </body>

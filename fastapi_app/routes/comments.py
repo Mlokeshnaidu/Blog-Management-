@@ -4,7 +4,8 @@ from typing import List
 
 from fastapi_app.core.database import get_db
 from fastapi_app.core.security import get_current_user
-from fastapi_app.core.notifications import send_email_notification
+from fastapi_app.core.subscription_service import check_can_comment
+from fastapi_app.services.notification_service import notification_service
 from fastapi_app.models.user import User
 from fastapi_app.models.post import Post
 from fastapi_app.models.comment import Comment
@@ -32,7 +33,6 @@ def add_comment(
         raise HTTPException(status_code=404, detail="Post not found")
 
     # Enforce Subscription Plan Limit for Comments
-    from fastapi_app.core.subscription_service import check_can_comment
     check_can_comment(current_user, db)
 
     comment = Comment(post_id=post_id, user_id=current_user.id, text=comment_in.text)
@@ -40,13 +40,15 @@ def add_comment(
     db.commit()
     db.refresh(comment)
 
+    # Trigger asynchronous email notification if post has an author and it's not self-comment
     if post.author and post.author_id != current_user.id:
-        background_tasks.add_task(
-            send_email_notification,
+        notification_service.send_comment_notification(
+            post_title=post.title,
             recipient_email=post.author.email,
-            recipient_username=post.author.username,
-            subject=f"New comment on: {post.title}",
-            message=f"@{current_user.username} commented: {comment.text}"
+            recipient_name=post.author.username,
+            actor_name=current_user.username,
+            comment_text=comment.text,
+            background_tasks=background_tasks,
         )
 
     return comment

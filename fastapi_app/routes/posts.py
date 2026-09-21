@@ -6,6 +6,7 @@ from typing import Optional
 from fastapi_app.core.database import get_db
 from fastapi_app.core.security import get_current_user, get_optional_current_user
 from fastapi_app.core.storage import save_upload_image, delete_image_file
+from fastapi_app.core.subscription_service import check_can_create_post, check_image_limit
 from fastapi_app.models.user import User
 from fastapi_app.models.post import Post
 from fastapi_app.schemas.post import PostOut, PostDetailOut, PaginatedPostResponse
@@ -87,8 +88,6 @@ def get_post(
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
     return _format_post(post, current_user)
-
-from fastapi_app.core.subscription_service import check_can_create_post, check_image_limit
 
 @router.post("/create", response_model=PostOut, status_code=status.HTTP_201_CREATED)
 @router.post("", response_model=PostOut, status_code=status.HTTP_201_CREATED)

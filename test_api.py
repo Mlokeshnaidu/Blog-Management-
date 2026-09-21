@@ -22,11 +22,10 @@ def override_db():
     finally:
         db.close()
 
-app.dependency_overrides[get_db] = override_db
-
 class TestBlogAPI(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        app.dependency_overrides[get_db] = override_db
         Base.metadata.create_all(bind=engine)
         from fastapi_app.models.subscription import SubscriptionPlan
         db = TestingSession()
@@ -42,7 +41,7 @@ class TestBlogAPI(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        Base.metadata.drop_all(bind=engine)
+        pass
 
     def test_00_root_and_docs(self):
         # Test Root endpoint

@@ -24,11 +24,10 @@ def override_db():
     finally:
         db.close()
 
-app.dependency_overrides[get_db] = override_db
-
 class TestSubscriptionAccessControl(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        app.dependency_overrides[get_db] = override_db
         Base.metadata.create_all(bind=engine)
         init_storage()
 
@@ -48,7 +47,7 @@ class TestSubscriptionAccessControl(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        Base.metadata.drop_all(bind=engine)
+        pass
 
     def test_01_get_plans(self):
         r = self.client.get("/subscriptions/plans")

@@ -10,3 +10,5 @@ python-multipart
 email-validator
 httpx
 reportlab
+fastapi-mail
+aiosmtplib
