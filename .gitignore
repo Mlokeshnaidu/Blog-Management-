@@ -8,7 +8,3 @@ venv/
 *.log
 media/
 *_response.json
-run_complete_demo.py
-audit_all.py
-verify_live.py
-verify_email_live.py

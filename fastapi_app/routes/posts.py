@@ -24,7 +24,6 @@ def _format_post(post: Post, current_user: Optional[User] = None):
         "author": post.author,
         "likes_count": len(post.likes) if post.likes else 0,
         "comments_count": len(post.comments) if post.comments else 0,
-        "views": post.views or 0,
         "is_liked_by_me": any(l.user_id == current_user.id for l in post.likes) if current_user and post.likes else False,
         "comments": post.comments or []
     }
@@ -88,22 +87,7 @@ def get_post(
     post = db.query(Post).filter(Post.id == post_id).first()
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
-    post.views = (post.views or 0) + 1
-    db.commit()
-    db.refresh(post)
     return _format_post(post, current_user)
-
-@router.post("/{post_id}/view")
-def record_post_view(
-    post_id: int,
-    db: Session = Depends(get_db)
-):
-    post = db.query(Post).filter(Post.id == post_id).first()
-    if not post:
-        raise HTTPException(status_code=404, detail="Post not found")
-    post.views = (post.views or 0) + 1
-    db.commit()
-    return {"status": "success", "post_id": post.id, "views": post.views}
 
 @router.post("/create", response_model=PostOut, status_code=status.HTTP_201_CREATED)
 @router.post("", response_model=PostOut, status_code=status.HTTP_201_CREATED)

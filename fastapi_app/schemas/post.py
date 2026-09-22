@@ -22,7 +22,6 @@ class PostOut(BaseModel):
     author: Optional[UserOut] = None
     likes_count: int = 0
     comments_count: int = 0
-    views: int = 0
     is_liked_by_me: bool = False
 
     class Config:

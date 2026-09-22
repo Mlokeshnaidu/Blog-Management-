@@ -11,7 +11,6 @@ class Post(Base):
     content = Column(Text, nullable=False)
     image = Column(String(500), nullable=True)
     author_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    views = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     author = relationship("User", back_populates="posts")
