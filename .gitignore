@@ -8,3 +8,4 @@ venv/
 *.log
 media/
 *_response.json
+test_image.jpg
