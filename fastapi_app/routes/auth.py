@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -29,85 +29,14 @@ def register(user_in: UserRegister, db: Session = Depends(get_db)):
     token = create_access_token({"sub": user.username})
     return {"access_token": token, "token_type": "bearer", "user": user}
 
-@router.post(
-    "/login",
-    response_model=Token,
-    openapi_extra={
-        "requestBody": {
-            "content": {
-                "application/json": {
-                    "schema": {
-                        "type": "object",
-                        "properties": {
-                            "username": {"type": "string", "description": "Username or Email address"},
-                            "password": {"type": "string", "format": "password", "description": "User password"}
-                        },
-                        "required": ["username", "password"]
-                    }
-                },
-                "application/x-www-form-urlencoded": {
-                    "schema": {
-                        "type": "object",
-                        "properties": {
-                            "username": {"type": "string", "description": "Username or Email address"},
-                            "password": {"type": "string", "format": "password", "description": "User password"}
-                        },
-                        "required": ["username", "password"]
-                    }
-                }
-            }
-        }
-    }
-)
-async def login(request: Request, db: Session = Depends(get_db)):
-    content_type = request.headers.get("content-type", "")
-    username = None
-    password = None
-
-    if "application/json" in content_type:
-        try:
-            body = await request.json()
-            if isinstance(body, dict):
-                username = body.get("username")
-                password = body.get("password")
-        except Exception:
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid JSON body")
-    elif "application/x-www-form-urlencoded" in content_type or "multipart/form-data" in content_type:
-        try:
-            form = await request.form()
-            username = form.get("username")
-            password = form.get("password")
-        except Exception:
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid form data")
-    else:
-        try:
-            body = await request.json()
-            if isinstance(body, dict):
-                username = body.get("username")
-                password = body.get("password")
-        except Exception:
-            try:
-                form = await request.form()
-                username = form.get("username")
-                password = form.get("password")
-            except Exception:
-                pass
-
-    if not username or not password:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Username and password are required"
-        )
-
+@router.post("/login", response_model=Token)
+def login(user_in: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(
-        (func.lower(User.username) == username.lower()) | (func.lower(User.email) == username.lower())
+        (func.lower(User.username) == user_in.username.lower()) | (func.lower(User.email) == user_in.username.lower())
     ).first()
-    if not user or not verify_password(password, user.password):
+    if not user or not verify_password(user_in.password, user.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
     token = create_access_token({"sub": user.username})
     return {"access_token": token, "token_type": "bearer", "user": user}
 
-@router.get("/me", response_model=UserOut)
-def get_profile(current_user: User = Depends(get_current_user)):
-    return current_user

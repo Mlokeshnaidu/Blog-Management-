@@ -1,27 +1,15 @@
 import logging
 import smtplib
-from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import Any, Dict, List, Optional
+from typing import Optional
 
 from fastapi_app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
 class EmailService:
-    """Service to handle SMTP email transmission with in-memory auditing and fallback."""
-
-    def __init__(self):
-        self._sent_emails: List[Dict[str, Any]] = []
-
-    def clear_sent_emails(self) -> None:
-        """Clear the in-memory log of sent emails (useful for testing)."""
-        self._sent_emails.clear()
-
-    def get_sent_emails(self) -> List[Dict[str, Any]]:
-        """Retrieve sent email history for auditing and verification."""
-        return list(self._sent_emails)
+    """Service to handle SMTP email transmission."""
 
     def send_email_sync(
         self,
@@ -45,16 +33,6 @@ class EmailService:
         if body_html:
             msg.attach(MIMEText(body_html, "html", "utf-8"))
 
-        email_record = {
-            "recipient_email": recipient_email,
-            "recipient_name": recipient_name or recipient_email,
-            "subject": subject,
-            "body_text": body_text,
-            "body_html": body_html,
-            "sent_at": datetime.now().isoformat(),
-            "status": "delivered"
-        }
-
         # Attempt SMTP transmission if not suppressed and credentials / host present
         if not settings.MAIL_SUPPRESS_SEND and settings.MAIL_SERVER:
             try:
@@ -65,15 +43,13 @@ class EmailService:
                     server.login(settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
                 server.send_message(msg)
                 server.quit()
-                email_record["status"] = "delivered"
                 logger.info(f"Email successfully delivered to {recipient_email}")
+                return True
             except Exception as e:
-                email_record["status"] = f"failed ({str(e)})"
                 logger.warning(f"SMTP dispatch failed gracefully: {e}")
+                return False
         else:
-            email_record["status"] = "delivered (mock/suppressed)"
-
-        self._sent_emails.append(email_record)
-        return email_record["status"] in ("delivered", "delivered (mock/suppressed)")
+            logger.info(f"Email suppressed/mock for {recipient_email}: {subject}")
+            return True
 
 email_service = EmailService()

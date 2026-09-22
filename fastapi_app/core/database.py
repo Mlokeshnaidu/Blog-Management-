@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, text, inspect
+from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 from fastapi_app.core.config import settings
 
@@ -14,29 +14,6 @@ def init_db():
     from fastapi_app.models.user import User
 
     Base.metadata.create_all(bind=engine)
-    
-    # SQLite schema migrations for existing tables
-    try:
-        inspector = inspect(engine)
-        if "posts" in inspector.get_table_names():
-            columns = [c["name"] for c in inspector.get_columns("posts")]
-            if "image" not in columns:
-                with engine.connect() as conn:
-                    conn.execute(text("ALTER TABLE posts ADD COLUMN image VARCHAR(500)"))
-                    conn.commit()
-
-        if "users" in inspector.get_table_names():
-            columns = [c["name"] for c in inspector.get_columns("users")]
-            with engine.connect() as conn:
-                if "subscription_plan_id" not in columns:
-                    conn.execute(text("ALTER TABLE users ADD COLUMN subscription_plan_id INTEGER REFERENCES subscription_plans(id)"))
-                if "subscription_start_date" not in columns:
-                    conn.execute(text("ALTER TABLE users ADD COLUMN subscription_start_date DATETIME"))
-                if "subscription_end_date" not in columns:
-                    conn.execute(text("ALTER TABLE users ADD COLUMN subscription_end_date DATETIME"))
-                conn.commit()
-    except Exception:
-        pass
 
     # Seed Default Subscription Plans if empty
     db = SessionLocal()

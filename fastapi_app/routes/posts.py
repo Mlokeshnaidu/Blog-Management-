@@ -5,7 +5,7 @@ from typing import Optional
 
 from fastapi_app.core.database import get_db
 from fastapi_app.core.security import get_current_user, get_optional_current_user
-from fastapi_app.core.storage import save_upload_image, delete_image_file
+from fastapi_app.core.storage import save_upload_image
 from fastapi_app.core.subscription_service import check_can_create_post, check_image_limit
 from fastapi_app.models.user import User
 from fastapi_app.models.post import Post
@@ -24,7 +24,6 @@ def _format_post(post: Post, current_user: Optional[User] = None):
         "author": post.author,
         "likes_count": len(post.likes) if post.likes else 0,
         "comments_count": len(post.comments) if post.comments else 0,
-        "is_liked_by_me": any(l.user_id == current_user.id for l in post.likes) if current_user and post.likes else False,
         "comments": post.comments or []
     }
 
@@ -90,7 +89,6 @@ def get_post(
     return _format_post(post, current_user)
 
 @router.post("/create", response_model=PostOut, status_code=status.HTTP_201_CREATED)
-@router.post("", response_model=PostOut, status_code=status.HTTP_201_CREATED)
 async def create_post(
     request: Request,
     title: Optional[str] = Form(None, description="Post title"),
@@ -134,7 +132,6 @@ async def create_post(
     return _format_post(post, current_user)
 
 @router.put("/{post_id}/update", response_model=PostOut)
-@router.put("/{post_id}", response_model=PostOut)
 async def update_post(
     post_id: int,
     request: Request,
@@ -172,8 +169,6 @@ async def update_post(
 
     if image and image.filename:
         check_image_limit(current_user, 1, db)
-        if post.image:
-            delete_image_file(post.image)
         post.image = save_upload_image(image)
 
     db.commit()
@@ -191,9 +186,6 @@ def delete_post(
         raise HTTPException(status_code=404, detail="Post not found")
     if post.author_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to delete this post")
-
-    if post.image:
-        delete_image_file(post.image)
 
     db.delete(post)
     db.commit()

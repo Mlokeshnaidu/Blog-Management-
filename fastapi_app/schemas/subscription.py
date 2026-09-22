@@ -39,20 +39,3 @@ class SubscribeResponse(BaseModel):
     plan: SubscriptionPlanOut
     billing: BillingHistoryOut
 
-class UserPlanUsageOut(BaseModel):
-    user_id: int
-    username: str
-    plan_name: str
-    plan: SubscriptionPlanOut
-    posts_count: int
-    max_posts: int
-    can_create_post: bool
-    likes_count: int
-    max_likes: int
-    can_like: bool
-    comments_count: int
-    max_comments: int
-    can_comment: bool
-    max_images_per_post: int
-    subscription_start_date: Optional[datetime] = None
-    subscription_end_date: Optional[datetime] = None
