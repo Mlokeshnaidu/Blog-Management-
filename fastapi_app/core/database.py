@@ -20,10 +20,19 @@ def init_db():
         inspector = inspect(engine)
         if "posts" in inspector.get_table_names():
             columns = [c["name"] for c in inspector.get_columns("posts")]
-            if "image" not in columns:
-                with engine.connect() as conn:
+            with engine.connect() as conn:
+                if "image" not in columns:
                     conn.execute(text("ALTER TABLE posts ADD COLUMN image VARCHAR(500)"))
-                    conn.commit()
+                if "views" not in columns:
+                    conn.execute(text("ALTER TABLE posts ADD COLUMN views INTEGER DEFAULT 0"))
+                conn.commit()
+
+        if "likes" in inspector.get_table_names():
+            columns = [c["name"] for c in inspector.get_columns("likes")]
+            with engine.connect() as conn:
+                if "created_at" not in columns:
+                    conn.execute(text("ALTER TABLE likes ADD COLUMN created_at DATETIME"))
+                conn.commit()
 
         if "users" in inspector.get_table_names():
             columns = [c["name"] for c in inspector.get_columns("users")]
