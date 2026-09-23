@@ -9,6 +9,7 @@ from fastapi_app.services.notification_service import notification_service
 from fastapi_app.models.user import User
 from fastapi_app.models.post import Post
 from fastapi_app.models.comment import Comment
+from fastapi_app.models.notification import Notification
 from fastapi_app.schemas.comment import CommentCreate, CommentOut
 
 router = APIRouter(prefix="/posts", tags=["Comments"])
@@ -50,6 +51,15 @@ def add_comment(
             comment_text=comment.text,
             background_tasks=background_tasks,
         )
+
+        # Create in-app notification for the post author
+        in_app_notif = Notification(
+            user_id=post.author_id,
+            message=f'{current_user.username} commented on your post "{post.title}"',
+            notification_type="comment",
+        )
+        db.add(in_app_notif)
+        db.commit()
 
     return comment
 

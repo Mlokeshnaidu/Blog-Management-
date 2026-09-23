@@ -8,9 +8,10 @@ from fastapi_app.models.post import Post
 from fastapi_app.models.like import Like
 from fastapi_app.models.comment import Comment
 from fastapi_app.models.subscription import SubscriptionPlan, BillingHistory
+from fastapi_app.models.notification import Notification
 from fastapi_app.core.invoices import generate_invoice_pdf
 
-LIMIT_EXCEEDED_MESSAGE = "You’ve reached your plan limit. Kindly upgrade your plan to continue."
+LIMIT_EXCEEDED_MESSAGE = "You've reached your plan limit. Kindly upgrade your plan to continue."
 
 def get_or_create_default_plan(db: Session) -> SubscriptionPlan:
     """Gets the default Basic plan or creates it if not present."""
@@ -140,6 +141,14 @@ def subscribe_user_to_plan(user: User, plan: SubscriptionPlan, db: Session) -> B
     user.subscription_plan_id = plan.id
     user.subscription_start_date = start_date
     user.subscription_end_date = end_date
+
+    # Create in-app notification for subscription activation
+    in_app_notif = Notification(
+        user_id=user.id,
+        message=f"Your {plan.name} subscription has been activated successfully!",
+        notification_type="subscription",
+    )
+    db.add(in_app_notif)
 
     db.commit()
     db.refresh(billing)

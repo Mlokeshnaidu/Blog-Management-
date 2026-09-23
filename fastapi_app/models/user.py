@@ -19,3 +19,4 @@ class User(Base):
     likes = relationship("Like", back_populates="user", cascade="all, delete-orphan")
     subscription_plan = relationship("SubscriptionPlan", back_populates="users")
     billing_histories = relationship("BillingHistory", back_populates="user", cascade="all, delete-orphan")
+    notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")

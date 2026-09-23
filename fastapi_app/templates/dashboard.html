@@ -24,7 +24,139 @@
             align-items: center;
         }
         .header h1 { font-size: 22px; }
+        .header .header-right {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
         .header .username { font-size: 14px; opacity: .85; }
+
+        /* ── Notification Bell ─────────────────────────────── */
+        .notif-bell {
+            position: relative;
+            cursor: pointer;
+            user-select: none;
+        }
+        .notif-bell svg {
+            width: 26px;
+            height: 26px;
+            fill: #fff;
+            transition: transform 0.2s;
+        }
+        .notif-bell:hover svg {
+            transform: scale(1.15);
+        }
+        .notif-badge {
+            position: absolute;
+            top: -6px;
+            right: -8px;
+            background: #e53935;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            box-shadow: 0 1px 4px rgba(0,0,0,.3);
+        }
+        .notif-badge.hidden { display: none; }
+
+        /* ── Notification Dropdown ─────────────────────────── */
+        .notif-dropdown {
+            display: none;
+            position: absolute;
+            top: 40px;
+            right: 0;
+            width: 360px;
+            max-height: 420px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 8px 32px rgba(0,0,0,.18);
+            z-index: 1000;
+            overflow: hidden;
+        }
+        .notif-dropdown.open { display: block; }
+        .notif-dropdown-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .notif-dropdown-header h3 {
+            font-size: 15px;
+            color: #333;
+        }
+        .notif-mark-all {
+            font-size: 12px;
+            color: #1a73e8;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-weight: 600;
+        }
+        .notif-mark-all:hover { text-decoration: underline; }
+        .notif-list {
+            overflow-y: auto;
+            max-height: 360px;
+        }
+        .notif-empty {
+            padding: 32px 16px;
+            text-align: center;
+            color: #999;
+            font-size: 14px;
+        }
+        .notif-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 16px;
+            border-bottom: 1px solid #f5f5f5;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .notif-item:hover { background: #f8f9fa; }
+        .notif-item.unread { background: #e8f0fe; }
+        .notif-item.unread:hover { background: #d4e4fc; }
+        .notif-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .notif-icon.like { background: #fce4ec; }
+        .notif-icon.comment { background: #e8f5e9; }
+        .notif-icon.subscription { background: #fff3e0; }
+        .notif-content { flex: 1; min-width: 0; }
+        .notif-message {
+            font-size: 13px;
+            color: #333;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+        .notif-item.unread .notif-message { font-weight: 600; }
+        .notif-time {
+            font-size: 11px;
+            color: #999;
+            margin-top: 3px;
+        }
+        .notif-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #1a73e8;
+            flex-shrink: 0;
+            margin-top: 5px;
+        }
+        .notif-dot.read { visibility: hidden; }
 
         /* ── Auth bar ──────────────────────────────────────── */
         .auth-bar {
@@ -115,6 +247,7 @@
         @media (max-width: 700px) {
             .charts { grid-template-columns: 1fr; }
             .stats  { grid-template-columns: repeat(2, 1fr); }
+            .notif-dropdown { width: 300px; right: -10px; }
         }
     </style>
 </head>
@@ -122,7 +255,25 @@
 
 <div class="header">
     <h1>📊 User Dashboard</h1>
-    <span class="username" id="headerUser"></span>
+    <div class="header-right">
+        <!-- Notification Bell -->
+        <div class="notif-bell" id="notifBell" onclick="toggleNotifDropdown()" title="Notifications">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+            </svg>
+            <span class="notif-badge hidden" id="notifBadge">0</span>
+            <div class="notif-dropdown" id="notifDropdown">
+                <div class="notif-dropdown-header">
+                    <h3>🔔 Notifications</h3>
+                    <button class="notif-mark-all" onclick="markAllRead(event)">Mark all as read</button>
+                </div>
+                <div class="notif-list" id="notifList">
+                    <div class="notif-empty">No notifications yet</div>
+                </div>
+            </div>
+        </div>
+        <span class="username" id="headerUser"></span>
+    </div>
 </div>
 
 <!-- Token input -->
@@ -168,6 +319,7 @@
 <script>
     let barChartInstance = null;
     let lineChartInstance = null;
+    let currentToken = '';
 
     function showMsg(text, type) {
         const el = document.getElementById('msg');
@@ -175,10 +327,124 @@
         el.className = 'msg ' + type;
     }
 
+    /* ── Notification helpers ──────────────────────────── */
+
+    function getNotifIcon(type) {
+        const icons = { like: '❤️', comment: '💬', subscription: '⭐' };
+        return icons[type] || '🔔';
+    }
+
+    function timeAgo(dateStr) {
+        const now = new Date();
+        const d = new Date(dateStr);
+        const diffMs = now - d;
+        const mins = Math.floor(diffMs / 60000);
+        if (mins < 1) return 'Just now';
+        if (mins < 60) return mins + 'm ago';
+        const hrs = Math.floor(mins / 60);
+        if (hrs < 24) return hrs + 'h ago';
+        const days = Math.floor(hrs / 24);
+        if (days < 7) return days + 'd ago';
+        return d.toLocaleDateString();
+    }
+
+    function toggleNotifDropdown() {
+        const dd = document.getElementById('notifDropdown');
+        dd.classList.toggle('open');
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        const bell = document.getElementById('notifBell');
+        const dd = document.getElementById('notifDropdown');
+        if (bell && !bell.contains(e.target)) {
+            dd.classList.remove('open');
+        }
+    });
+
+    async function loadNotifications() {
+        if (!currentToken) return;
+        try {
+            const res = await fetch('/notifications/', {
+                headers: { 'Authorization': 'Bearer ' + currentToken }
+            });
+            if (!res.ok) return;
+            const notifications = await res.json();
+            renderNotifications(notifications);
+
+            // Update badge
+            const unreadCount = notifications.filter(n => !n.is_read).length;
+            const badge = document.getElementById('notifBadge');
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        } catch (e) {
+            console.error('Failed to load notifications:', e);
+        }
+    }
+
+    function renderNotifications(notifications) {
+        const list = document.getElementById('notifList');
+        if (!notifications.length) {
+            list.innerHTML = '<div class="notif-empty">No notifications yet</div>';
+            return;
+        }
+        list.innerHTML = notifications.map(n => `
+            <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="markOneRead(event, ${n.id}, ${n.is_read})">
+                <div class="notif-icon ${n.notification_type}">${getNotifIcon(n.notification_type)}</div>
+                <div class="notif-content">
+                    <div class="notif-message">${escapeHtml(n.message)}</div>
+                    <div class="notif-time">${timeAgo(n.created_at)}</div>
+                </div>
+                <div class="notif-dot ${n.is_read ? 'read' : ''}"></div>
+            </div>
+        `).join('');
+    }
+
+    function escapeHtml(text) {
+        const d = document.createElement('div');
+        d.textContent = text;
+        return d.innerHTML;
+    }
+
+    async function markOneRead(event, notifId, alreadyRead) {
+        event.stopPropagation();
+        if (alreadyRead) return;
+        try {
+            await fetch(`/notifications/${notifId}/read`, {
+                method: 'PUT',
+                headers: { 'Authorization': 'Bearer ' + currentToken }
+            });
+            await loadNotifications();
+        } catch (e) {
+            console.error('Failed to mark notification as read:', e);
+        }
+    }
+
+    async function markAllRead(event) {
+        event.stopPropagation();
+        if (!currentToken) return;
+        try {
+            await fetch('/notifications/read-all', {
+                method: 'PUT',
+                headers: { 'Authorization': 'Bearer ' + currentToken }
+            });
+            await loadNotifications();
+        } catch (e) {
+            console.error('Failed to mark all as read:', e);
+        }
+    }
+
+    /* ── Dashboard ─────────────────────────────────────── */
+
     async function loadDashboard() {
         const token = document.getElementById('tokenInput').value.trim();
         if (!token) { showMsg('Please enter your JWT token.', 'error'); return; }
 
+        currentToken = token;
         showMsg('Loading…', 'info');
 
         try {
@@ -195,6 +461,9 @@
             const data = await res.json();
             renderDashboard(data);
             document.getElementById('msg').style.display = 'none';
+
+            // Load notifications after dashboard loads
+            await loadNotifications();
         } catch (e) {
             showMsg('Network error: ' + e.message, 'error');
         }

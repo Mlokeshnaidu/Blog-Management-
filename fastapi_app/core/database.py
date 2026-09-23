@@ -12,6 +12,7 @@ Base = declarative_base()
 def init_db():
     from fastapi_app.models.subscription import SubscriptionPlan
     from fastapi_app.models.user import User
+    from fastapi_app.models.notification import Notification
 
     Base.metadata.create_all(bind=engine)
 

@@ -11,6 +11,7 @@ from fastapi_app.routes.comments import router as comments_router
 from fastapi_app.routes.likes import router as likes_router
 from fastapi_app.routes.subscriptions import router as subscriptions_router
 from fastapi_app.routes.dashboard import router as dashboard_router
+from fastapi_app.routes.notifications import router as notifications_router
 
 init_db()
 init_storage()
@@ -31,6 +32,7 @@ app.include_router(comments_router)
 app.include_router(likes_router)
 app.include_router(subscriptions_router)
 app.include_router(dashboard_router)
+app.include_router(notifications_router)
 
 
 @app.get("/", tags=["Root"])

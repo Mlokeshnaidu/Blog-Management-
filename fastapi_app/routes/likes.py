@@ -8,6 +8,7 @@ from fastapi_app.services.notification_service import notification_service
 from fastapi_app.models.user import User
 from fastapi_app.models.post import Post
 from fastapi_app.models.like import Like
+from fastapi_app.models.notification import Notification
 from fastapi_app.schemas.like import LikeToggleResponse
 
 router = APIRouter(prefix="/posts", tags=["Likes"])
@@ -46,6 +47,15 @@ def toggle_like(
             actor_name=current_user.username,
             background_tasks=background_tasks,
         )
+
+        # Create in-app notification for the post author
+        in_app_notif = Notification(
+            user_id=post.author_id,
+            message=f'{current_user.username} liked your post "{post.title}"',
+            notification_type="like",
+        )
+        db.add(in_app_notif)
+        db.commit()
 
     return {"liked": True, "likes_count": len(post.likes)}
 
