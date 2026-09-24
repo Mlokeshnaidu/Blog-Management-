@@ -5,6 +5,7 @@ from fastapi_app.schemas.like import LikeOut, LikeToggleResponse
 from fastapi_app.schemas.subscription import SubscriptionPlanOut, SubscribeRequest, BillingHistoryOut, SubscribeResponse
 from fastapi_app.schemas.dashboard import DashboardResponse, PostStatItem, ActivityTimePoint
 from fastapi_app.schemas.notification import NotificationOut, NotificationCountOut
+from fastapi_app.schemas.chat import ChatRequest, ChatResponse, ChatHistoryItem, ChatHistoryResponse
 
 __all__ = [
     "UserRegister", "UserLogin", "UserOut", "Token",
@@ -14,5 +15,6 @@ __all__ = [
     "SubscriptionPlanOut", "SubscribeRequest", "BillingHistoryOut", "SubscribeResponse",
     "DashboardResponse", "PostStatItem", "ActivityTimePoint",
     "NotificationOut", "NotificationCountOut",
+    "ChatRequest", "ChatResponse", "ChatHistoryItem", "ChatHistoryResponse",
 ]
 

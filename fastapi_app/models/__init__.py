@@ -4,5 +4,6 @@ from fastapi_app.models.comment import Comment
 from fastapi_app.models.like import Like
 from fastapi_app.models.subscription import SubscriptionPlan, BillingHistory
 from fastapi_app.models.notification import Notification
+from fastapi_app.models.chat_message import ChatMessage
 
-__all__ = ["User", "Post", "Comment", "Like", "SubscriptionPlan", "BillingHistory", "Notification"]
+__all__ = ["User", "Post", "Comment", "Like", "SubscriptionPlan", "BillingHistory", "Notification", "ChatMessage"]
