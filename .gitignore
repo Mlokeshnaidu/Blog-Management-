@@ -9,3 +9,4 @@ venv/
 media/
 *_response.json
 test_image.jpg
+blog_backup.db

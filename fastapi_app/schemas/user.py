@@ -16,6 +16,7 @@ class UserOut(BaseModel):
     id: int
     username: str
     email: str
+    auth_provider: Optional[str] = "local"
     subscription_plan_id: Optional[int] = None
     subscription_plan: Optional[SubscriptionPlanOut] = None
     subscription_start_date: Optional[datetime] = None

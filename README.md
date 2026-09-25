@@ -1,11 +1,13 @@
-﻿# Blog Management API
+# Blog Management API
 
-A full-featured blogging system API built with **FastAPI**, **SQLite**, **SQLAlchemy ORM**, and **JWT authentication**.
+A full-featured blogging system API built with **FastAPI**, **SQLite**, **SQLAlchemy ORM**, **JWT authentication**, and **Auth0 social login (Google & Facebook)**.
 
 ## Features
 
 ### 1. Core Blog Management (Task 1)
 - **Authentication**: JWT-based user registration and login (/auth/register, /auth/login)
+- **Social Login**: Auth0-powered Google & Facebook login (/auth/login/google, /auth/login/facebook)
+- **Signup & Login UI**: Beautiful dark-themed login page at /login with social buttons
 - **Posts CRUD**: Create, read, update, and delete blog posts with ownership checks
 - **Comments**: Add, view, and delete comments on posts
 - **Likes**: Like and unlike posts (toggle)
@@ -126,8 +128,14 @@ uvicorn main:app --reload
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
 | POST | /auth/register | Register new user | No |
+| POST | /auth/signup | Alias for register | No |
 | POST | /auth/login | Login & get JWT | No |
+| GET | /auth/login/google | Redirect to Google Login (Auth0) | No |
+| GET | /auth/login/facebook | Redirect to Facebook Login (Auth0) | No |
+| GET | /auth/callback | Auth0 callback handler | No |
+| GET | /auth/logout | Auth0 logout | No |
 | GET | /auth/me | Get current user profile | Yes |
+| GET | /login | Login / Signup UI page | No |
 | GET | /posts | List posts (paginated, searchable) | No |
 | GET | /posts/mine | List my posts | Yes |
 | GET | /posts/{id} | Get single post | No |

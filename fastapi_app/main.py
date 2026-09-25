@@ -19,8 +19,8 @@ init_storage()
 
 app = FastAPI(
     title="Blog Management API",
-    description="Blogging system API built with FastAPI, SQLite, SQLAlchemy ORM, JWT authentication, subscription-based access control, email notifications, user dashboard, and AI support chat.",
-    version="4.0.0",
+    description="Blogging system API built with FastAPI, SQLite, SQLAlchemy ORM, JWT authentication, Auth0 social login (Google & Facebook), subscription-based access control, email notifications, user dashboard, and AI support chat.",
+    version="5.0.0",
     docs_url="/docs",
     redoc_url=None,
 )
@@ -37,7 +37,7 @@ app.include_router(notifications_router)
 app.include_router(ai_support_router)
 
 
-# ── Chat UI page ──────────────────────────────────────────────
+# ── HTML Pages ────────────────────────────────────────────────────────────
 import pathlib
 from fastapi.responses import HTMLResponse
 
@@ -51,11 +51,18 @@ def chat_page():
     return HTMLResponse(content=html_path.read_text(encoding="utf-8"))
 
 
+@app.get("/login", response_class=HTMLResponse, tags=["Authentication"], include_in_schema=False)
+def login_page():
+    """Serve the Login / Signup UI with social login buttons."""
+    html_path = _TEMPLATE_DIR / "login.html"
+    return HTMLResponse(content=html_path.read_text(encoding="utf-8"))
+
+
 @app.get("/", tags=["Root"])
 def root():
     return {
         "message": "Welcome to the Blog Management API",
         "docs": "/docs",
+        "login": "/login",
         "chat": "/chat",
     }
-

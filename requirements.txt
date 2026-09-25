@@ -12,3 +12,6 @@ httpx
 reportlab
 fastapi-mail
 aiosmtplib
+authlib
+itsdangerous
+jinja2

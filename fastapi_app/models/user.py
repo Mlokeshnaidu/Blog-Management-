@@ -8,7 +8,11 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(50), unique=True, index=True, nullable=False)
     email = Column(String(100), unique=True, index=True, nullable=False)
-    password = Column(String(255), nullable=False)
+    password = Column(String(255), nullable=True)  # Nullable for social login users
+
+    # Auth0 / Social Login fields
+    auth_provider = Column(String(50), default="local")  # 'local', 'google-oauth2', 'facebook'
+    auth_provider_id = Column(String(255), nullable=True, unique=True)  # Auth0 sub / provider user ID
 
     subscription_plan_id = Column(Integer, ForeignKey("subscription_plans.id", ondelete="SET NULL"), nullable=True)
     subscription_start_date = Column(DateTime, nullable=True)

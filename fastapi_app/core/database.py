@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import declarative_base, sessionmaker
 from fastapi_app.core.config import settings
 
@@ -16,6 +16,20 @@ def init_db():
     from fastapi_app.models.chat_message import ChatMessage
 
     Base.metadata.create_all(bind=engine)
+
+    # ── Migrate: add Auth0 columns to existing users table ────────────
+    _migrations = [
+        "ALTER TABLE users ADD COLUMN auth_provider VARCHAR(50) DEFAULT 'local'",
+        "ALTER TABLE users ADD COLUMN auth_provider_id VARCHAR(255)",
+    ]
+    with engine.connect() as conn:
+        for stmt in _migrations:
+            try:
+                conn.execute(text(stmt))
+                conn.commit()
+            except Exception:
+                # Column likely already exists — safe to ignore
+                conn.rollback()
 
     # Seed Default Subscription Plans if empty
     db = SessionLocal()
