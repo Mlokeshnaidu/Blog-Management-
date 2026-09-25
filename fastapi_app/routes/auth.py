@@ -172,10 +172,20 @@ async def auth0_callback(request: Request, db: Session = Depends(get_db)):
     userinfo = userinfo_resp.json()
     auth0_sub = userinfo.get("sub", "")           # e.g. "google-oauth2|123456789"
     email = userinfo.get("email", "")
-    name = userinfo.get("name") or userinfo.get("nickname") or email.split("@")[0]
+    name = userinfo.get("name") or userinfo.get("nickname") or ""
 
+    # Facebook often does not return an email address even when the email
+    # scope is requested (user may decline, or their FB email is unverified).
+    # Instead of blocking login, generate a placeholder email so the user can
+    # still sign in.  They can update their email in their profile later.
     if not email:
-        return RedirectResponse(url="/login?error=Email+not+provided+by+provider")
+        # Build a deterministic placeholder from the Auth0 sub, e.g.
+        #   "facebook|12345" → "facebook_12345@social.auth0.local"
+        safe_sub = auth0_sub.replace("|", "_") if auth0_sub else "unknown"
+        email = f"{safe_sub}@social.auth0.local"
+
+    if not name:
+        name = email.split("@")[0]
 
     # Determine provider
     provider = auth0_sub.split("|")[0] if "|" in auth0_sub else "auth0"
