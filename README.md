@@ -154,14 +154,4 @@ uvicorn main:app --reload
 | GET | /billing/invoices/{id}/download | Download PDF invoice | Yes |
 | GET | /user/dashboard/ | User dashboard analytics | Yes |
 
-## Team
 
-- Rithika Sri K K (Lead)
-- Akshaya J
-- Aprajit Roshan
-- Chinthakunta Sudarsan Reddy
-- Logesh S M
-- M Lokesh
-- Clifton Danish J
-- Prakash Raj S
-- Nala Sravan Kumar
