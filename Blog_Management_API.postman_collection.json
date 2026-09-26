@@ -38,7 +38,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"alice\",\n  \"email\": \"alice@example.com\",\n  \"password\": \"Password123!\"\n}"
+              "raw": "{\n  \"username\": \"Lokesh\",\n  \"email\": \"lokesh@example.com\",\n  \"password\": \"Loki@1234\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/register",
@@ -70,12 +70,23 @@
             "header": [
               {
                 "key": "Content-Type",
-                "value": "application/json"
+                "value": "application/x-www-form-urlencoded"
               }
             ],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"username\": \"alice\",\n  \"password\": \"Password123!\"\n}"
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "Lokesh",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "Loki@1234",
+                  "type": "text"
+                }
+              ]
             },
             "url": {
               "raw": "{{base_url}}/auth/login",
